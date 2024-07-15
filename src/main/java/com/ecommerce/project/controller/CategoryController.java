@@ -9,6 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/categories") // Base URL for all category-related endpoints
@@ -24,54 +30,92 @@ public class CategoryController {
 
     // GET endpoint to retrieve all categories
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<CollectionModel<EntityModel<Category>>> getAllCategories() {
         List<Category> categories = categoryService.getAllCategories();
-        return new ResponseEntity<>(categories, HttpStatus.OK); // Return categories with 200 OK status
+        List<EntityModel<Category>> categoryResources = categories.stream()
+                .map(category -> EntityModel.of(category,
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryById(category.getId())).withSelfRel(),
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories")))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(CollectionModel.of(categoryResources, WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withSelfRel()));
     }
 
     // GET endpoint to retrieve a specific category by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<Category>> getCategoryById(@PathVariable Long id) {
         Category category = categoryService.getCategoryById(id);
-        return new ResponseEntity<>(category, HttpStatus.OK); // Return the category with 200 OK status
+        EntityModel<Category> resource = EntityModel.of(category,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryById(id)).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories"));
+        return ResponseEntity.ok(resource); // Return the category with HATEOAS links
     }
 
     // POST endpoint to create a new category
     @PostMapping(consumes = "application/json") // Expecting JSON request body
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+    public ResponseEntity<EntityModel<Category>> createCategory(@RequestBody Category category) {
         Category createdCategory = categoryService.createCategory(category);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdCategory); // Return created category with 201 Created status
+        EntityModel<Category> resource = EntityModel.of(createdCategory,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryById(createdCategory.getId())).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(resource); // Return created category with HATEOAS links
     }
 
     // PUT endpoint to update an existing category by ID
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+    public ResponseEntity<EntityModel<Category>> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
         Category updatedCategory = categoryService.updateCategory(id, categoryDetails);
-        return new ResponseEntity<>(updatedCategory, HttpStatus.OK); // Return updated category with 200 OK status
+        EntityModel<Category> resource = EntityModel.of(updatedCategory,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryById(updatedCategory.getId())).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories"));
+        return ResponseEntity.ok(resource); // Return updated category with HATEOAS links
     }
 
     // DELETE endpoint to remove a category by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Return 204 No Content status
+        return ResponseEntity.noContent().build(); // Return 204 No Content status
     }
 
     // GET endpoint for paginated and sorted categories
     @GetMapping("/page")
-    public Page<Category> getCategories(@RequestParam int page, @RequestParam int size, @RequestParam String sortBy) {
-        return categoryService.getCategories(page, size, sortBy); // Return a paginated list of categories
+    public ResponseEntity<CollectionModel<EntityModel<Category>>> getCategories(@RequestParam int page, @RequestParam int size, @RequestParam String sortBy) {
+        Page<Category> categoryPage = categoryService.getCategories(page, size, sortBy);
+        List<EntityModel<Category>> categoryResources = categoryPage.getContent().stream()
+                .map(category -> EntityModel.of(category,
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryById(category.getId())).withSelfRel(),
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories")))
+                .collect(Collectors.toList());
+
+        CollectionModel<EntityModel<Category>> categoryCollectionModel = CollectionModel.of(categoryResources,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategories(page, size, sortBy)).withSelfRel());
+
+        // Add pagination information
+        categoryCollectionModel.add(Link.of(categoryPage.getPageable().getSort().toString()).withRel("sort"));
+        return ResponseEntity.ok(categoryCollectionModel); // Return paginated categories with HATEOAS links
     }
 
     // GET endpoint to retrieve a category by name
     @GetMapping("/name/{name}")
-    public Category getCategoryByName(@PathVariable String name) {
-        return categoryService.getCategoryByName(name); // Return category found by name
+    public ResponseEntity<EntityModel<Category>> getCategoryByName(@PathVariable String name) {
+        Category category = categoryService.getCategoryByName(name);
+        EntityModel<Category> resource = EntityModel.of(category,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryByName(name)).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories"));
+        return ResponseEntity.ok(resource); // Return category found by name with HATEOAS links
     }
 
     // GET endpoint to retrieve categories that have products
     @GetMapping("/with-products")
-    public List<Category> getCategoriesWithProducts() {
-        return categoryService.getCategoriesWithProducts(); // Return categories with associated products
+    public ResponseEntity<CollectionModel<EntityModel<Category>>> getCategoriesWithProducts() {
+        List<Category> categories = categoryService.getCategoriesWithProducts();
+        List<EntityModel<Category>> categoryResources = categories.stream()
+                .map(category -> EntityModel.of(category,
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoryById(category.getId())).withSelfRel(),
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getAllCategories()).withRel("categories")))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(CollectionModel.of(categoryResources, WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CategoryController.class).getCategoriesWithProducts()).withSelfRel())); // Return categories with products and HATEOAS links
     }
 }
