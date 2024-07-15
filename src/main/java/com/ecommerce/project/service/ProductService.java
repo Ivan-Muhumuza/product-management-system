@@ -43,6 +43,13 @@ public class ProductService {
         return productRepository.findAll(pageable); // Return paginated products
     }
 
+    /* Paginated retrieval of products with sorting
+    * method overload to allow  for other usecases */
+    public Page<Product> getProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
+    }
+
+
     // Retrieve a product by its ID
     public Product getProductById(Long id) {
         // Search in the binary tree first

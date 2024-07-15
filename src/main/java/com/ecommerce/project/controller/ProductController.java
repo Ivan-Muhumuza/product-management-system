@@ -4,9 +4,22 @@ import com.ecommerce.project.entity.Product;
 import com.ecommerce.project.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+
 
 @RestController
 @RequestMapping("/products") // Base URL for all product-related endpoints
@@ -21,55 +34,102 @@ public class ProductController {
 
     // GET endpoint to retrieve all products
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts(); // Return the list of all products
+    public CollectionModel<EntityModel<Product>> getAllProducts() {
+        // Convert the list of products to a list of EntityModel<Product> with HATEOAS links
+        List<EntityModel<Product>> products = productService.getAllProducts().stream()
+                .map(product -> EntityModel.of(product,
+                        linkTo(methodOn(ProductController.class).getProductById(product.getId())).withSelfRel(),
+                        linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products")))
+                .collect(Collectors.toList());
+
+        // Return the collection of products wrapped in a CollectionModel
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
     }
 
     // GET endpoint to retrieve a paginated list of products with sorting
     @GetMapping("/page")
     public Page<Product> getProducts(@RequestParam int page, @RequestParam int size, @RequestParam String sortBy) {
-        return productService.getProducts(page, size, sortBy); // Return a paginated list of products
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        return productService.getProducts(pageable); // Ensure this does not lead back to itself
     }
 
     // GET endpoint to retrieve a specific product by its ID
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable Long id) {
-        return productService.getProductById(id); // Return the product with the given ID
+    public EntityModel<Product> getProductById(@PathVariable Long id) {
+        // Retrieve the product and wrap it in an EntityModel with HATEOAS links
+        Product product = productService.getProductById(id);
+        return EntityModel.of(product,
+                linkTo(methodOn(ProductController.class).getProductById(id)).withSelfRel(),
+                linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products"));
     }
 
     // POST endpoint to create a new product
     @PostMapping(consumes = "application/json")
-    public Product createProduct(@RequestBody Product product) {
-        return productService.saveProduct(product); // Save the product and return it
+    public EntityModel<Product> createProduct(@RequestBody Product product) {
+        // Save the product and wrap it in an EntityModel with HATEOAS links
+        Product createdProduct = productService.saveProduct(product);
+        return EntityModel.of(createdProduct,
+                linkTo(methodOn(ProductController.class).getProductById(createdProduct.getId())).withSelfRel(),
+                linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products"));
     }
 
     // PUT endpoint to update an existing product by its ID
     @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
-        return productService.updateProduct(id, product); // Update the product and return the updated product
+    public EntityModel<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        // Update the product and wrap it in an EntityModel with HATEOAS links
+        Product updatedProduct = productService.updateProduct(id, product);
+        return EntityModel.of(updatedProduct,
+                linkTo(methodOn(ProductController.class).getProductById(updatedProduct.getId())).withSelfRel(),
+                linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products"));
     }
 
     // DELETE endpoint to remove a product by its ID
     @DeleteMapping("/{id}")
-    public void deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id); // Delete the product with the given ID
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        // Delete the product
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 
     // GET endpoint to retrieve products by their category name
     @GetMapping("/category/{categoryName}")
-    public List<Product> getProductsByCategory(@PathVariable String categoryName) {
-        return productService.getProductsByCategoryName(categoryName); // Return products in the specified category
+    public CollectionModel<EntityModel<Product>> getProductsByCategory(@PathVariable String categoryName) {
+        // Retrieve products by category and convert to a list of EntityModel<Product> with HATEOAS links
+        List<EntityModel<Product>> products = productService.getProductsByCategoryName(categoryName).stream()
+                .map(product -> EntityModel.of(product,
+                        linkTo(methodOn(ProductController.class).getProductById(product.getId())).withSelfRel(),
+                        linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products")))
+                .collect(Collectors.toList());
+
+        // Return the collection of products wrapped in a CollectionModel
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
     }
 
     // GET endpoint to retrieve products by their name
     @GetMapping("/name/{name}")
-    public List<Product> getProductsByName(@PathVariable String name) {
-        return productService.getProductsByName(name); // Return products that match the specified name
+    public CollectionModel<EntityModel<Product>> getProductsByName(@PathVariable String name) {
+        // Retrieve products by name and convert to a list of EntityModel<Product> with HATEOAS links
+        List<EntityModel<Product>> products = productService.getProductsByName(name).stream()
+                .map(product -> EntityModel.of(product,
+                        linkTo(methodOn(ProductController.class).getProductById(product.getId())).withSelfRel(),
+                        linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products")))
+                .collect(Collectors.toList());
+
+        // Return the collection of products wrapped in a CollectionModel
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
     }
 
     // GET endpoint to retrieve products that are more expensive than a specified price
     @GetMapping("/expensive/{price}")
-    public List<Product> getExpensiveProducts(@PathVariable Double price) {
-        return productService.getExpensiveProducts(price); // Return products above the specified price
+    public CollectionModel<EntityModel<Product>> getExpensiveProducts(@PathVariable Double price) {
+        // Retrieve products above the specified price and convert to a list of EntityModel<Product> with HATEOAS links
+        List<EntityModel<Product>> products = productService.getExpensiveProducts(price).stream()
+                .map(product -> EntityModel.of(product,
+                        linkTo(methodOn(ProductController.class).getProductById(product.getId())).withSelfRel(),
+                        linkTo(methodOn(ProductController.class).getAllProducts()).withRel("products")))
+                .collect(Collectors.toList());
+
+        // Return the collection of products wrapped in a CollectionModel
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
     }
 }
