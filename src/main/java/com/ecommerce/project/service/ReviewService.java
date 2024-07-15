@@ -1,6 +1,8 @@
 package com.ecommerce.project.service;
 
 import com.ecommerce.project.document.Review;
+import com.ecommerce.project.exception.ResourceNotFoundException;
+import com.ecommerce.project.exception.ReviewNotFoundException;
 import com.ecommerce.project.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,12 @@ public class ReviewService {
     // Retrieve all reviews
     public List<Review> getAllReviews() {
         return reviewRepository.findAll(); // Return the list of all reviews
+    }
+
+    // Retrieve a review by ID
+    public Review getReviewById(String id) {
+        return reviewRepository.findById(id) // Adjusted to use String
+                .orElseThrow(() -> new ReviewNotFoundException(id)); // Custom exception for not found
     }
 }
 
