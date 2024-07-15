@@ -76,7 +76,36 @@ The E-Commerce Product Management System is designed to manage categories, produ
     - The application will be accessible at `http://localhost:8080`.
 
 ## API Endpoints
-- **Categories**: `/categories` ,`/categories/{id}`,`/categories/page`, `/categories/name/{name}`  and `/categories/with-products`    
-- **Products**: `/products`, `/products/page`,`/products/{id}`, `/products/category/{categoryName}`, `/products/name/{name}`, `/products/expensive/{price}` and `/nosql/products`    
-- **Reviews**: `/reviews`     
-- **Support Tickets**: `/support-tickets`      
+
+### Product Endpoints
+- `GET /products`
+- `GET /products/page`
+- `GET /products/{id}`
+- `POST /products`
+- `PUT /products/{id}`
+- `DELETE /products/{id}`
+- `GET /products/category/{categoryName}`
+- `GET /products/name/{name}`
+- `GET /products/expensive/{price}`
+
+### Category Endpoints
+- `GET /categories`
+- `GET /categories/{id}`
+- `POST /categories`
+- `PUT /categories/{id}`
+- `DELETE /categories/{id}`
+- `GET /categories/page`
+- `GET /categories/name/{name}`
+- `GET /categories/with-products`
+
+### Review Endpoints
+- `POST /reviews`
+- `GET /reviews`
+
+### Support Ticket Endpoints
+- `POST /support-tickets`
+- `GET /support-tickets`
+
+### NoSQL Product Endpoints
+- `POST /nosql/products`
+- `GET /nosql/products` 
