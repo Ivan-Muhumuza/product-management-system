@@ -3,6 +3,7 @@
 
 [Loom video link here](https://www.loom.com/share/24eb78d900274a8291ad1be379477cc6?sid=b4cf6d4b-1603-475f-a7ec-0f5716848d05)
 
+[loom-video-optimization-lab](https://www.loom.com/share/21b8092a6ffc4b91831fc0403c4a93ef)
 ## Overview
 The E-Commerce Product Management System is designed to manage categories, products, reviews, and support tickets. The application utilizes a combination of relational and NoSQL databases, providing flexibility in data storage and retrieval.
 
