@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "product", indexes = {
+        @Index(name = "idx_product_category", columnList = "category_id")
+})
 public class Product {
 
     @Id

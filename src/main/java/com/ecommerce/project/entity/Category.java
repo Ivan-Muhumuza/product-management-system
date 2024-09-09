@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "category", indexes = {
+        @Index(name = "idx_category_name", columnList = "name")
+})
 public class Category {
 
     @Id

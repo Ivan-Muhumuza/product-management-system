@@ -4,6 +4,8 @@ import com.ecommerce.project.entity.Category;
 import com.ecommerce.project.repository.CategoryRepository;
 import com.ecommerce.project.tree.CategoryBinaryTree;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryBinaryTree categoryTree = new CategoryBinaryTree(); // Instance of the binary tree for categories
+    private boolean isTreeInitialized = false; // Track initialization status
 
     @Autowired
     public CategoryService(CategoryRepository categoryRepository) {
@@ -24,14 +27,19 @@ public class CategoryService {
     }
 
     // Method to populate the binary tree with all categories from the database
+    // Lazy initialization of the binary tree
     private void initializeTree() {
-        List<Category> categories = categoryRepository.findAll(); // Fetch all categories
-        for (Category category : categories) {
-            categoryTree.insert(category); // Insert each category into the binary tree
+        if (!isTreeInitialized) {
+            List<Category> categories = categoryRepository.findAll();
+            for (Category category : categories) {
+                categoryTree.insert(category);
+            }
+            isTreeInitialized = true;
         }
     }
 
     // Retrieve all categories from the repository
+    @Cacheable("categories")
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
@@ -43,6 +51,7 @@ public class CategoryService {
     }
 
     // Retrieve a category by its ID, checking both the tree and the repository
+    @Cacheable(value = "categoryById", key = "#id")
     public Category getCategoryById(Long id) {
         // Search in the binary tree
         Category category = categoryTree.search(id);
@@ -51,6 +60,7 @@ public class CategoryService {
     }
 
     // Create a new category and insert it into the binary tree
+    @CacheEvict(value = {"categories", "categoryById"}, allEntries = true)
     public Category createCategory(Category category) {
         Category savedCategory = categoryRepository.save(category);
         categoryTree.insert(savedCategory); // Insert into the binary tree
@@ -70,6 +80,7 @@ public class CategoryService {
     }
 
     // Delete a category and remove it from the binary tree
+    @CacheEvict(value = {"categories", "categoryById"}, allEntries = true)
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
         categoryRepository.delete(category);

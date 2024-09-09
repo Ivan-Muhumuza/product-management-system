@@ -89,5 +89,10 @@ public class BinaryTree {
         }
         return minProduct; // Return the minimum product found
     }
+
+    public void update(Long id, Product updatedProduct) {
+        delete(id);
+        insert(updatedProduct);
+    }
 }
 
